@@ -47,7 +47,9 @@ import java.util.function.Consumer;
 import javax.inject.Inject;
 import io.papermc.fill.model.response.v3.VersionsResponse;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.gradle.api.DefaultTask;
@@ -221,8 +223,9 @@ public abstract class PublishToFillTask extends DefaultTask implements AutoClose
 
         if (lastBuildWithCommits != null) {
           final Commit lastCommit = lastBuildWithCommits.commits().getFirst();
-          final RevCommit lastBuildCommit = revWalk.parseCommit(git.getRepository().resolve(lastCommit.sha()));
-          revWalk.markUninteresting(lastBuildCommit);
+          if (!this.tryMarkPreviousBuildCommit(git, revWalk, currentCommit, lastCommit)) {
+            return commits;
+          }
         }
       }
 
@@ -237,6 +240,50 @@ public abstract class PublishToFillTask extends DefaultTask implements AutoClose
       throw new GradleException("Failed to get commit data", e);
     }
     return commits;
+  }
+
+  private boolean tryMarkPreviousBuildCommit(final Git git, final RevWalk revWalk, final RevCommit currentCommit, final Commit lastCommit) throws IOException {
+    final ObjectId lastBuildObjectId = git.getRepository().resolve(lastCommit.sha());
+    if (lastBuildObjectId == null) {
+      this.logEmptyChangelogWarning(
+        lastCommit.sha(),
+        currentCommit.getName(),
+        "previous build commit is not present in the local repository"
+      );
+      return false;
+    }
+
+    try (final RevWalk ancestryWalk = new RevWalk(git.getRepository())) {
+      final RevCommit previousBuildCommit = ancestryWalk.parseCommit(lastBuildObjectId);
+      final RevCommit currentBuildCommit = ancestryWalk.parseCommit(currentCommit);
+      if (!ancestryWalk.isMergedInto(previousBuildCommit, currentBuildCommit)) {
+        this.logEmptyChangelogWarning(
+          lastCommit.sha(),
+          currentCommit.getName(),
+          "previous build commit is not an ancestor of the current HEAD"
+        );
+        return false;
+      }
+    } catch (final MissingObjectException e) {
+      this.logEmptyChangelogWarning(
+        lastCommit.sha(),
+        currentCommit.getName(),
+        "previous build commit could not be loaded from the local repository"
+      );
+      return false;
+    }
+
+    revWalk.markUninteresting(revWalk.parseCommit(lastBuildObjectId));
+    return true;
+  }
+
+  private void logEmptyChangelogWarning(final String previousCommit, final String currentCommit, final String reason) {
+    this.getLogger().warn(
+      "Unable to compute changelog: {} (previous build commit: {}, current HEAD: {}). Publishing with an empty changelog.",
+      reason,
+      previousCommit,
+      currentCommit
+    );
   }
 
   private List<BuildResponse> fetchPreviousBuilds(final FillExtension extension) {
