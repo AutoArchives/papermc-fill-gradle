@@ -26,6 +26,8 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.PathSensitive;
+import org.gradle.api.tasks.PathSensitivity;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -166,6 +168,7 @@ public interface FillExtension {
     Property<NameResolver> getNameResolver();
 
     @InputFile
+    @PathSensitive(PathSensitivity.NAME_ONLY)
     RegularFileProperty getFile();
 
     @FunctionalInterface
