@@ -59,5 +59,5 @@ dependencies {
   implementation(libs.jgit)
 
   testImplementation(libs.junit)
-  testRuntimeOnly("org.junit.platform", "junit-platform-launcher")
+  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
