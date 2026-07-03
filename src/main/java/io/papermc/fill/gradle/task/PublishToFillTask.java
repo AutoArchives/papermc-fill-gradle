@@ -248,7 +248,8 @@ public abstract class PublishToFillTask extends DefaultTask implements AutoClose
       this.logEmptyChangelogWarning(
         lastCommit.sha(),
         currentCommit.getName(),
-        "previous build commit is not present in the local repository"
+        "previous build commit is not present in the local repository",
+        false
       );
       return false;
     }
@@ -260,29 +261,34 @@ public abstract class PublishToFillTask extends DefaultTask implements AutoClose
         this.logEmptyChangelogWarning(
           lastCommit.sha(),
           currentCommit.getName(),
-          "previous build commit is not an ancestor of the current HEAD"
+          "previous build commit is not an ancestor of the current HEAD",
+          false
         );
         return false;
       }
     } catch (final MissingObjectException e) {
+      // looks like history was squashed away, lets just use this commit as changelog
+      revWalk.markUninteresting(revWalk.parseCommit(currentCommit.getParent(0)));
       this.logEmptyChangelogWarning(
         lastCommit.sha(),
         currentCommit.getName(),
-        "previous build commit could not be loaded from the local repository"
+        "previous build commit could not be loaded from the local repository",
+        true
       );
-      return false;
+      return true;
     }
 
     revWalk.markUninteresting(revWalk.parseCommit(lastBuildObjectId));
     return true;
   }
 
-  private void logEmptyChangelogWarning(final String previousCommit, final String currentCommit, final String reason) {
+  private void logEmptyChangelogWarning(final String previousCommit, final String currentCommit, final String reason, final boolean shortChangelog) {
     this.getLogger().warn(
-      "Unable to compute changelog: {} (previous build commit: {}, current HEAD: {}). Publishing with an empty changelog.",
+      "Unable to compute changelog: {} (previous build commit: {}, current HEAD: {}). {}",
       reason,
       previousCommit,
-      currentCommit
+      currentCommit,
+      shortChangelog ? "Publishing with short changelog" : "Publishing with an empty changelog."
     );
   }
 
