@@ -1,19 +1,19 @@
 [versions]
 indra = "4.0.0"
-jackson = "2.20.1"
-junit = "6.0.1"
+jackson = "2.22.0"
+junit = "6.1.1"
 
 [plugins]
 indra = { id = "net.kyori.indra", version.ref = "indra" }
 indra-git = { id = "net.kyori.indra.git", version.ref = "indra" }
 indra-spotless = { id = "net.kyori.indra.licenser.spotless", version.ref = "indra" }
-publish-plugin = { id = "com.gradle.plugin-publish", version = "2.0.0" }
+publish-plugin = { id = "com.gradle.plugin-publish", version = "2.1.1" }
 
 [libraries]
-guava = { module = "com.google.guava:guava", version = "33.5.0-jre" }
+guava = { module = "com.google.guava:guava", version = "33.6.0-jre" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 jspecify = { module = "org.jspecify:jspecify", version = "1.0.0" }
 mammoth = { module = "net.kyori:mammoth", version = "1.5.0" }
 junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
-jgit = "org.eclipse.jgit:org.eclipse.jgit:7.4.0.202509020913-r"
+jgit = "org.eclipse.jgit:org.eclipse.jgit:7.7.0.202606012155-r"
